@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Socket, io } from "socket.io-client";
 
 import { QrReader } from "react-qr-reader";
@@ -21,7 +21,7 @@ const App = () => {
     gameOver: false,
     players: [],
   });
-  const [updateCounter, forceUpdate] = useState(0);
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     socket = io("https://ws.infect.live");
