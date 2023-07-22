@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Socket, io } from "socket.io-client";
-
 import { QrReader } from "react-qr-reader";
+import { Socket, io } from "socket.io-client";
 
 let socket: Socket | null;
 type Team = "zombies" | "humans";
@@ -27,7 +26,7 @@ const App = () => {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setIsScanTimeout(false), 2000);
+    const timeout = setTimeout(() => setIsScanTimeout(false), 100);
 
     return () => {
       clearTimeout(timeout);
@@ -41,6 +40,17 @@ const App = () => {
       clearTimeout(timeout);
     };
   }, [hasScannedRecently]);
+
+  useEffect(() => {
+    if (
+      !gameState.players.find(
+        (p) => p.userId === localStorage.getItem("playerId")
+      ) &&
+      gameState.gameId !== 0
+    ) {
+      localStorage.removeItem("playerId");
+    }
+  });
 
   useEffect(() => {
     socket = io("https://ws.infect.live");
@@ -65,10 +75,17 @@ const App = () => {
   const qrReader = useMemo(() => {
     return (
       <QrReader
-        constraints={{ facingMode: "environment" }}
+        scanDelay={0}
+        constraints={{
+          facingMode: "environment",
+          frameRate: 60,
+          width: 1920,
+          height: 1080,
+        }}
+        // resolution={1500}
         onResult={(result) => {
-          if (isScanTimeout) return;
           if (result) {
+            if (isScanTimeout) return;
             const text = result.getText();
             setHasScannedRecently(true);
             setIsScanTimeout(true);
