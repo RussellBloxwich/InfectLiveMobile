@@ -45,8 +45,13 @@ const App = () => {
   useEffect(() => {
     socket = io("https://ws.infect.live");
     socket.on("state", (state) => {
-      if (state.gameId === gameState.gameId || gameState.gameId === 0)
+      console.count("Try set game state!");
+      if (state.gameId === gameState.gameId || gameState.gameId === 0) {
+        console.count("Set game state!");
         setGameState(state);
+      } else {
+        console.count("Not set game state!");
+      }
     });
 
     return () => {
@@ -75,7 +80,10 @@ const App = () => {
               forceUpdate((p) => p + 1);
             } else {
               if (text === localStorage.getItem("playerId")) return;
-              socket?.emit("scan", { userId: localStorage.getItem("playerId"), targetId: text });
+              socket?.emit("scan", {
+                userId: localStorage.getItem("playerId"),
+                targetId: text,
+              });
             }
           }
         }}
@@ -106,8 +114,12 @@ const App = () => {
               <br />
               OVER
             </p>
+            <p className="">
+              {playerInfo?.team === "zombies" ? "🧟‍♂️" : "🧑‍⚕️"} Score:{" "}
+              {playerInfo?.score} 🔢 {playerInfo?.totalScore}
+            </p>
             <div
-            className="bg-blue-500 p-2 rounded-md text-white font-semibold text-xl"
+              className="bg-blue-500 p-2 rounded-md text-white font-semibold text-xl"
               onClick={() => {
                 setGameState({
                   gameOver: false,
@@ -115,7 +127,9 @@ const App = () => {
                   gameId: 0,
                 });
 
-                socket?.emit("join", { userId: localStorage.getItem("playerId") });
+                socket?.emit("join", {
+                  userId: localStorage.getItem("playerId"),
+                });
               }}
             >
               Join new game
