@@ -36,19 +36,9 @@ const App = () => {
 
   return (
     <>
-      <div
-        className="relative h-full w-screen bg-gray-400 overflow-hidden"
-        style={{
-          minHeight: "-webkit-fill-available",
-        }}
-      >
+      <div className="relative bg-gray-900 h-full w-screen overflow-hidden min-safe-h-screen">
         {gameState?.gameOver && (
-          <div
-            className="absolute w-screen bg-gray-50 z-[70] flex flex-row items-center justify-center text-3xl font-bold"
-            style={{
-              minHeight: "-webkit-fill-available",
-            }}
-          >
+          <div className="absolute w-screen bg-gray-50 z-[70] flex flex-row items-center justify-center text-3xl font-bold min-safe-h-screen">
             GAME
             <br />
             OVER
@@ -56,7 +46,6 @@ const App = () => {
         )}
         <QrReader
           constraints={{ facingMode: "environment" }}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onResult={(result) => {
             if (result) {
               const text = result.getText();
@@ -75,19 +64,16 @@ const App = () => {
             position: "fixed",
             width: "100vw",
             height: "100vh",
-            backgroundColor: "red",
           }}
           videoStyle={{
             width: "auto",
             maxWidth: "unset",
-            backgroundColor: "green",
           }}
           videoContainerStyle={{
             height: "100%",
-            backgroundColor: "blue",
           }}
         />
-        <div className="absolute bottom-0 left-0 w-full z-[50] bg-yellow-500 flex flex-row justify-center py-2">
+        <div className="absolute top-0 left-0 w-full p-8 z-[50] bg-yellow-500 flex flex-row justify-center py-2">
           {playerId && !playerInfo && "Loading"}
           {!playerId && <p>Scan your QR to join</p>}
           {playerId && playerInfo && (
