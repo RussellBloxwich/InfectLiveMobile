@@ -45,19 +45,18 @@ const App = () => {
   useEffect(() => {
     socket = io("https://ws.infect.live");
     socket.on("state", (state) => {
-      console.count("Try set game state!");
-      if (state.gameId === gameState.gameId || gameState.gameId === 0) {
-        console.count("Set game state!");
-        setGameState(state);
-      } else {
-        console.count("Not set game state!");
-      }
+      setGameState((g) => {
+        if (state.gameId === g.gameId || g.gameId === 0) {
+          return state;
+        }
+        return g;
+      });
     });
 
     return () => {
       socket?.close();
     };
-  }, [setGameState]);
+  }, [setGameState, gameState]);
 
   const playerId = localStorage.getItem("playerId");
 
