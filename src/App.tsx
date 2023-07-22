@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { QrReader } from "react-qr-reader";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import Quagga from "@ericblade/quagga2";
+
 import { Socket, io } from "socket.io-client";
+import Scanner from "./Scanner";
 
 let socket: Socket | null;
 type Team = "zombies" | "humans";
@@ -24,6 +27,37 @@ const App = () => {
   const [hasScannedRecently, setHasScannedRecently] = useState(false);
   const [isScanTimeout, setIsScanTimeout] = useState(false);
   const [, forceUpdate] = useState(0);
+
+  const [scanning, setScanning] = useState(false); // toggleable state for "should render scanner"
+  const [cameraError, setCameraError] = useState<any>(null); // error message from failing to access the camera
+
+  const scannerRef = useRef(null); // reference to the scanner element in the DOM
+
+  useEffect(() => {
+    const enableCamera = async () => {
+      await Quagga.CameraAccess.request(null, {});
+    };
+    const disableCamera = async () => {
+      await Quagga.CameraAccess.release();
+    };
+    const enumerateCameras = async () => {
+      const cameras = await Quagga.CameraAccess.enumerateVideoDevices();
+      console.log("Cameras Detected: ", cameras);
+      return cameras;
+    };
+    enableCamera()
+      .then(disableCamera)
+      .then(enumerateCameras)
+      .then(() => Quagga.CameraAccess.disableTorch()) // disable torch at start, in case it was enabled before and we hot-reloaded
+      .catch((err) => setCameraError(err));
+
+    setTimeout(() => {
+      setScanning(true);
+    }, 2000);
+    return () => {
+      disableCamera();
+    };
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => setIsScanTimeout(false), 100);
@@ -72,53 +106,30 @@ const App = () => {
 
   const playerInfo = gameState.players.find((p) => p.userId === playerId);
 
-  const qrReader = useMemo(() => {
+  const scanner = useMemo(() => {
     return (
-      <QrReader
-        scanDelay={0}
-        constraints={{
-          facingMode: "environment",
-          frameRate: 60,
-          width: 1920,
-          height: 1080,
-        }}
-        // resolution={1500}
-        onResult={(result) => {
-          if (result) {
-            if (isScanTimeout) return;
-            const text = result.getText();
-            setHasScannedRecently(true);
-            setIsScanTimeout(true);
-            if (!localStorage.getItem("playerId")) {
-              socket?.emit("join", { userId: text });
-              localStorage.setItem("playerId", text);
+      <Scanner
+        scannerRef={scannerRef}
+        facingMode="environment"
+        onDetected={(text: any) => {
+          setHasScannedRecently(true);
+          setIsScanTimeout(true);
+          if (!localStorage.getItem("playerId")) {
+            socket?.emit("join", { userId: text });
+            localStorage.setItem("playerId", text);
 
-              forceUpdate((p) => p + 1);
-            } else {
-              if (text === localStorage.getItem("playerId")) return;
-              socket?.emit("scan", {
-                userId: localStorage.getItem("playerId"),
-                targetId: text,
-              });
-            }
+            forceUpdate((p) => p + 1);
+          } else {
+            if (text === localStorage.getItem("playerId")) return;
+            socket?.emit("scan", {
+              userId: localStorage.getItem("playerId"),
+              targetId: text,
+            });
           }
-        }}
-        className="min-safe-h-screen"
-        containerStyle={{
-          position: "fixed",
-          width: "100vw",
-          height: "100vh",
-        }}
-        videoStyle={{
-          width: "auto",
-          maxWidth: "unset",
-        }}
-        videoContainerStyle={{
-          height: "100%",
         }}
       />
     );
-  }, [isScanTimeout, setHasScannedRecently, setIsScanTimeout]);
+  }, []);
 
   return (
     <>
@@ -159,28 +170,53 @@ const App = () => {
         >
           &nbsp;
         </div>
-        {qrReader}
-        <div className="absolute top-0 left-0 w-full p-8 z-[50] flex flex-row justify-center py-2 bg-yellow-500">
+
+        {cameraError ? (
+          <p>ERROR INITIALIZING CAMERA ${JSON.stringify(cameraError)}</p>
+        ) : null}
+
+        <div ref={scannerRef} className="flex-grow h-full">
+          <video
+            style={{
+              width: window.innerWidth,
+            }}
+          />
+          <canvas
+            className="drawingBuffer absolute top-0 left-0 w-full h-full"
+            width="640"
+            height="480"
+          />
+          {scanning ? scanner : null}
+        </div>
+        <div
+          className={`absolute top-0 left-0 w-full p-8 z-[50] flex flex-row justify-center py-2 ${
+            playerInfo?.team === "humans"
+              ? "bg-blue-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
           {localStorage.getItem("playerId") && !playerInfo && "Loading"}
           {!localStorage.getItem("playerId") && <p>Scan your QR to join</p>}
           {localStorage.getItem("playerId") && playerInfo && (
-            <span className="w-full flex flex-row justify-between items-center">
-              &nbsp;
-              <p className="">
-                {playerInfo.team === "zombies" ? "🧟‍♂️" : "🧑‍⚕️"} Score:{" "}
-                {playerInfo.score} 🔢 {playerInfo.totalScore}
-              </p>
-              <div
-                className="bg-red-100 p-2 rounded-sm"
-                onClick={() => {
-                  socket?.emit("leave", {
-                    userId: localStorage.getItem("playerId"),
-                  });
-                  localStorage.removeItem("playerId");
-                }}
-              >
-                <p>Leave</p>
-              </div>
+            <span className="flex flex-col">
+              <span className="w-full flex flex-row justify-between items-center">
+                &nbsp;
+                <p className="">
+                  {playerInfo.team === "zombies" ? "🧟‍♂️" : "🧑‍⚕️"} Score:{" "}
+                  {playerInfo.score} 🔢 {playerInfo.totalScore}
+                </p>
+                <div
+                  className="bg-red-100 p-2 rounded-sm"
+                  onClick={() => {
+                    socket?.emit("leave", {
+                      userId: localStorage.getItem("playerId"),
+                    });
+                    localStorage.removeItem("playerId");
+                  }}
+                >
+                  <p>Leave</p>
+                </div>
+              </span>
             </span>
           )}
         </div>
