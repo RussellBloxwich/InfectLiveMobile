@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Quagga from "@ericblade/quagga2";
 
@@ -32,6 +32,7 @@ const App = () => {
   const [cameraError, setCameraError] = useState<any>(null); // error message from failing to access the camera
 
   const scannerRef = useRef(null); // reference to the scanner element in the DOM
+  const canvasContainer = useRef<HTMLDivElement>(null); // reference to the scanner element in the DOM
 
   useEffect(() => {
     const enableCamera = async () => {
@@ -133,7 +134,7 @@ const App = () => {
 
   return (
     <>
-      <div className="relative bg-gray-900 h-full w-screen overflow-hidden min-safe-h-screen">
+      <div className="relative  h-full w-screen overflow-hidden min-safe-h-screen">
         {gameState?.gameOver && (
           <div className="absolute w-screen bg-gray-50 z-[70] flex flex-col items-center justify-center min-safe-h-screen gap-4">
             <p className="text-3xl font-bold">
@@ -188,6 +189,7 @@ const App = () => {
           />
           {scanning ? scanner : null}
         </div>
+
         <div
           className={`absolute top-0 left-0 w-full p-8 z-[50] flex flex-row justify-center py-2 ${
             playerInfo?.team === "humans"

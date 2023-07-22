@@ -28,7 +28,7 @@ const defaultLocatorSettings = {
   willReadFrequently: true,
 };
 
-const defaultDecoders = ["ean_reader"];
+const defaultDecoders = ["codabar_reader"];
 
 const Scanner = ({
   onDetected,
@@ -90,9 +90,8 @@ const Scanner = ({
         drawingCtx.font = "24px Arial";
 
         drawingCtx.fillText(result.codeResult.code, 10, 20);
-        // if (validated) {
-        //     onDetected(result);
-        // }
+        onDetected(result);
+        
       }
     }
   };
@@ -118,11 +117,12 @@ const Scanner = ({
               ...constraints,
               ...(cameraId && { deviceId: cameraId }),
               ...(!cameraId && { facingMode }),
+              frameRate: 60
             },
             target: scannerRef.current,
             willReadFrequently: true,
           },
-          frequency: 8,
+          frequency: 10,
           locator,
           decoder: { readers: decoders },
           locate,
