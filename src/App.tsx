@@ -74,8 +74,8 @@ const App = () => {
 
               forceUpdate((p) => p + 1);
             } else {
-              if (text === playerId) return;
-              socket?.emit("scan", { userId: playerId, targetId: text });
+              if (text === localStorage.getItem("playerId")) return;
+              socket?.emit("scan", { userId: localStorage.getItem("playerId"), targetId: text });
             }
           }
         }}
@@ -115,7 +115,7 @@ const App = () => {
                   gameId: 0,
                 });
 
-                socket?.emit("join", { userId: playerId });
+                socket?.emit("join", { userId: localStorage.getItem("playerId") });
               }}
             >
               Join new game
@@ -131,9 +131,9 @@ const App = () => {
         </div>
         {qrReader}
         <div className="absolute top-0 left-0 w-full p-8 z-[50] flex flex-row justify-center py-2 bg-yellow-500">
-          {playerId && !playerInfo && "Loading"}
-          {!playerId && <p>Scan your QR to join</p>}
-          {playerId && playerInfo && (
+          {localStorage.getItem("playerId") && !playerInfo && "Loading"}
+          {!localStorage.getItem("playerId") && <p>Scan your QR to join</p>}
+          {localStorage.getItem("playerId") && playerInfo && (
             <span className="w-full flex flex-row justify-between items-center">
               &nbsp;
               <p className="">
