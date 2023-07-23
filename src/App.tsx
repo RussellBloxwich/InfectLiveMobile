@@ -112,20 +112,10 @@ const App = () => {
         scannerRef={scannerRef}
         facingMode="environment"
         onDetected={(result: any) => {
-          console.log({ result });
-          if (!localStorage.getItem("playerId")) {
-            socket?.emit("join", { userId: result.codeResult.code });
-            localStorage.setItem("playerId", result.codeResult.code);
-
-            forceUpdate((p) => p + 1);
-          } else {
-            if (result.codeResult.code === localStorage.getItem("playerId"))
-              return;
-            socket?.emit("scan", {
-              userId: localStorage.getItem("playerId"),
-              targetId: result.codeResult.code,
-            });
-          }
+          socket?.emit("scan", {
+            userId: localStorage.getItem("playerId"),
+            targetId: result.codeResult.code,
+          });
         }}
       />
     );
@@ -154,9 +144,13 @@ const App = () => {
                   gameId: 0,
                 });
 
-                socket?.emit("join", {
-                  userId: localStorage.getItem("playerId"),
-                });
+                if (!localStorage.getItem("playerId")) {
+                  let code = (Math.random() + 1).toString(36).substring(7);
+                  socket?.emit("join", { userId: code });
+                  localStorage.setItem("playerId", code);
+
+                  forceUpdate((p) => p + 1);
+                }
               }}
             >
               Join new game
@@ -191,7 +185,21 @@ const App = () => {
         >
           <span className="flex flex-col items-center w-full">
             {localStorage.getItem("playerId") && !playerInfo && "Loading"}
-            {!localStorage.getItem("playerId") && <p>Scan your QR to join</p>}
+            {!localStorage.getItem("playerId") && (
+              <p
+                onClick={() => {
+                  if (!localStorage.getItem("playerId")) {
+                    let code = (Math.random() + 1).toString(36).substring(7);
+                    socket?.emit("join", { userId: code });
+                    localStorage.setItem("playerId", code);
+
+                    forceUpdate((p) => p + 1);
+                  }
+                }}
+              >
+                Tap to join
+              </p>
+            )}
             {localStorage.getItem("playerId") && playerInfo && (
               <span className="w-full flex flex-row justify-between items-center">
                 &nbsp;
