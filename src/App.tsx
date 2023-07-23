@@ -24,15 +24,24 @@ const App = () => {
     players: [],
     gameId: 0,
   });
-  const [hasScannedRecently, setHasScannedRecently] = useState(false);
-  const [isScanTimeout, setIsScanTimeout] = useState(false);
+
+  const [message, setMessage] = useState("");
+
+  // const [isScanTimeout, setIsScanTimeout] = useState(false);
   const [, forceUpdate] = useState(0);
 
   const [scanning, setScanning] = useState(false); // toggleable state for "should render scanner"
   const [cameraError, setCameraError] = useState<any>(null); // error message from failing to access the camera
 
   const scannerRef = useRef(null); // reference to the scanner element in the DOM
-  const canvasContainer = useRef<HTMLDivElement>(null); // reference to the scanner element in the DOM
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setMessage(""), 1500);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [message]);
 
   useEffect(() => {
     const enableCamera = async () => {
@@ -61,22 +70,6 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setIsScanTimeout(false), 100);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [isScanTimeout]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setHasScannedRecently(false), 150);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [hasScannedRecently]);
-
-  useEffect(() => {
     if (
       !gameState.players.find(
         (p) => p.userId === localStorage.getItem("playerId")
@@ -98,6 +91,12 @@ const App = () => {
       });
     });
 
+    socket.on("result", (msg) => {
+      if (msg.userId === localStorage.getItem("playerId")) {
+        setMessage(msg.message);
+      }
+    });
+
     return () => {
       socket?.close();
     };
@@ -112,19 +111,19 @@ const App = () => {
       <Scanner
         scannerRef={scannerRef}
         facingMode="environment"
-        onDetected={(text: any) => {
-          setHasScannedRecently(true);
-          setIsScanTimeout(true);
+        onDetected={(result: any) => {
+          console.log({ result });
           if (!localStorage.getItem("playerId")) {
-            socket?.emit("join", { userId: text });
-            localStorage.setItem("playerId", text);
+            socket?.emit("join", { userId: result.codeResult.code });
+            localStorage.setItem("playerId", result.codeResult.code);
 
             forceUpdate((p) => p + 1);
           } else {
-            if (text === localStorage.getItem("playerId")) return;
+            if (result.codeResult.code === localStorage.getItem("playerId"))
+              return;
             socket?.emit("scan", {
               userId: localStorage.getItem("playerId"),
-              targetId: text,
+              targetId: result.codeResult.code,
             });
           }
         }}
@@ -165,13 +164,6 @@ const App = () => {
           </div>
         )}
 
-        <div
-          className="absolute w-screen pointer-events-none transition-opacity ease-in-out delay-100 bg-gray-50 z-[70] min-safe-h-screen"
-          style={{ opacity: hasScannedRecently ? 1 : 0 }}
-        >
-          &nbsp;
-        </div>
-
         {cameraError ? (
           <p>ERROR INITIALIZING CAMERA ${JSON.stringify(cameraError)}</p>
         ) : null}
@@ -184,8 +176,8 @@ const App = () => {
           />
           <canvas
             className="drawingBuffer absolute top-0 left-0 w-full h-full"
-            width="640"
-            height="480"
+            width="1920"
+            height="1080"
           />
           {scanning ? scanner : null}
         </div>
@@ -197,10 +189,10 @@ const App = () => {
               : "bg-red-500 text-white"
           }`}
         >
-          {localStorage.getItem("playerId") && !playerInfo && "Loading"}
-          {!localStorage.getItem("playerId") && <p>Scan your QR to join</p>}
-          {localStorage.getItem("playerId") && playerInfo && (
-            <span className="flex flex-col">
+          <span className="flex flex-col items-center w-full">
+            {localStorage.getItem("playerId") && !playerInfo && "Loading"}
+            {!localStorage.getItem("playerId") && <p>Scan your QR to join</p>}
+            {localStorage.getItem("playerId") && playerInfo && (
               <span className="w-full flex flex-row justify-between items-center">
                 &nbsp;
                 <p className="">
@@ -208,7 +200,7 @@ const App = () => {
                   {playerInfo.score} 🔢 {playerInfo.totalScore}
                 </p>
                 <div
-                  className="bg-red-100 p-2 rounded-sm"
+                  className="bg-gray-100 text-black p-2 rounded-sm"
                   onClick={() => {
                     socket?.emit("leave", {
                       userId: localStorage.getItem("playerId"),
@@ -219,8 +211,9 @@ const App = () => {
                   <p>Leave</p>
                 </div>
               </span>
-            </span>
-          )}
+            )}
+            <p>{message}</p>
+          </span>
         </div>
       </div>
     </>
