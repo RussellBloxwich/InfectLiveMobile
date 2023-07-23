@@ -91,7 +91,7 @@ const App = () => {
       });
     });
 
-    socket.on("result", (msg) => {
+    socket.on("notification", (msg) => {
       if (msg.userId === localStorage.getItem("playerId")) {
         setMessage(msg.message);
       }
