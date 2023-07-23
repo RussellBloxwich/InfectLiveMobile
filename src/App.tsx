@@ -78,8 +78,12 @@ const App = () => {
       ) &&
       gameState.gameId !== 0
     ) {
-      console.log("CLEAR");
       localStorage.removeItem("playerId");
+      setGameState({
+        gameOver: false,
+        players: [],
+        gameId: 0,
+      });
     }
   }, [gameState]);
 
@@ -218,6 +222,11 @@ const App = () => {
                       userId: localStorage.getItem("playerId"),
                     });
                     localStorage.removeItem("playerId");
+                    setGameState({
+                      gameOver: false,
+                      players: [],
+                      gameId: 0,
+                    });
                   }}
                 >
                   <p>Leave</p>

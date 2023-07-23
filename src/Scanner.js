@@ -117,12 +117,12 @@ const Scanner = ({
               ...constraints,
               ...(cameraId && { deviceId: cameraId }),
               ...(!cameraId && { facingMode }),
-              frameRate: 60
+              frameRate: 30
             },
             target: scannerRef.current,
             willReadFrequently: true,
           },
-          frequency: 10,
+          frequency: 5,
           locator,
           decoder: { readers: decoders },
           locate,
