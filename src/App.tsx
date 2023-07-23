@@ -1,9 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-
-import Quagga from "@ericblade/quagga2";
+import { useEffect, useMemo, useState } from "react";
 
 import { Socket, io } from "socket.io-client";
-import Scanner from "./Scanner";
 import { QrReader } from "react-qr-reader";
 
 let socket: Socket | null;
