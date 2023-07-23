@@ -70,28 +70,11 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const pid = localStorage.getItem("playerId");
-    if (
-      pid &&
-      !gameState.players.find(
-        (p) => p.userId === localStorage.getItem("playerId")
-      ) &&
-      gameState.gameId !== 0
-    ) {
-      localStorage.removeItem("playerId");
-      setGameState({
-        gameOver: false,
-        players: [],
-        gameId: 0,
-      });
-    }
-  }, [gameState]);
-
-  useEffect(() => {
     socket = io("https://ws.infect.live");
     socket.on("state", (state) => {
       setGameState((g) => {
         if (state.gameId === g.gameId || g.gameId === 0) {
+          console.log({ state, gameState });
           return state;
         }
         return g;
@@ -191,7 +174,27 @@ const App = () => {
           }`}
         >
           <span className="flex flex-col items-center w-full">
-            {localStorage.getItem("playerId") && !playerInfo && "Loading"}
+            {localStorage.getItem("playerId") && !playerInfo && (
+              <div className="w-full flex flex-row justify-between items-center">
+                &nbsp;<p>Loading</p>
+                <div
+                  className="bg-gray-100 text-black p-2 rounded-sm"
+                  onClick={() => {
+                    socket?.emit("leave", {
+                      userId: localStorage.getItem("playerId"),
+                    });
+                    localStorage.removeItem("playerId");
+                    setGameState({
+                      gameOver: false,
+                      players: [],
+                      gameId: 0,
+                    });
+                  }}
+                >
+                  <p>Leave</p>
+                </div>
+              </div>
+            )}
             {!localStorage.getItem("playerId") && (
               <p
                 onClick={() => {
