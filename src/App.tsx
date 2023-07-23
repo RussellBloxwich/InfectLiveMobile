@@ -14,12 +14,14 @@ type GameState = {
     score: number;
     totalScore: number;
   }[];
+  targets: { team: Team }[];
 };
 
 const App = () => {
   const [gameState, setGameState] = useState<GameState>({
     gameOver: false,
     players: [],
+    targets: [],
     gameId: 0,
   });
 
@@ -38,7 +40,7 @@ const App = () => {
   }, [isScanTimeout]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setHasScannedRecently(false), 150);
+    const timeout = setTimeout(() => setHasScannedRecently(false), 300);
 
     return () => {
       clearTimeout(timeout);
@@ -46,10 +48,13 @@ const App = () => {
   }, [hasScannedRecently]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setMessage(""), 1500);
+    let cancelled = false;
+    setTimeout(() => {
+      if (!cancelled) setMessage(() => "");
+    }, 1500);
 
     return () => {
-      clearTimeout(timeout);
+      cancelled = true;
     };
   }, [message]);
 
@@ -67,7 +72,10 @@ const App = () => {
 
     socket.on("notification", (msg) => {
       if (msg.userId === localStorage.getItem("playerId")) {
-        setMessage(msg.message);
+        setMessage((p) => {
+          if (p) return p;
+          return msg.message;
+        });
       }
     });
 
@@ -140,6 +148,7 @@ const App = () => {
                 setGameState({
                   gameOver: false,
                   players: [],
+                  targets: [],
                   gameId: 0,
                 });
 
@@ -156,10 +165,11 @@ const App = () => {
         )}
 
         <div
-          className="absolute w-screen pointer-events-none transition-opacity ease-in-out delay-100 bg-gray-50 z-[70] min-safe-h-screen"
-          style={{ opacity: hasScannedRecently ? 1 : 0 }}
+          className={`absolute w-screen flex flex-row items-center justify-center text-3xl text-black font-bold pointer-events-none transition-all ease-out delay-100 bg-gray-50 z-[70] min-safe-h-screen ${
+            hasScannedRecently ? "opacity-100" : "opacity-0"
+          }`}
         >
-          &nbsp;
+          SCANNED
         </div>
         {qrReader}
         <div
@@ -183,6 +193,7 @@ const App = () => {
                     setGameState({
                       gameOver: false,
                       players: [],
+                      targets: [],
                       gameId: 0,
                     });
                   }}
@@ -212,7 +223,12 @@ const App = () => {
                 &nbsp;
                 <p className="">
                   {playerInfo.team === "zombies" ? "🧟‍♂️" : "🧑‍⚕️"} Score:{" "}
-                  {playerInfo.score} 🔢 {playerInfo.totalScore}
+                  {playerInfo.score} Captured:{" "}
+                  {
+                    gameState.targets.filter((t) => t.team === playerInfo.team)
+                      .length
+                  }{" "}
+                  / {gameState.targets.length}
                 </p>
                 <div
                   className="bg-gray-100 text-black p-2 rounded-sm"
@@ -224,6 +240,7 @@ const App = () => {
                     setGameState({
                       gameOver: false,
                       players: [],
+                      targets: [],
                       gameId: 0,
                     });
                   }}
@@ -232,7 +249,9 @@ const App = () => {
                 </div>
               </span>
             )}
-            <p>{message}</p>
+            <p className="font-semibold text-xl bg-green-500 w-full text-center">
+              {message}
+            </p>
           </span>
         </div>
       </div>
