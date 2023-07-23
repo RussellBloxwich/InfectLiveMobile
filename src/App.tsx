@@ -70,15 +70,18 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    const pid = localStorage.getItem("playerId");
     if (
+      pid &&
       !gameState.players.find(
         (p) => p.userId === localStorage.getItem("playerId")
       ) &&
       gameState.gameId !== 0
     ) {
+      console.log("CLEAR");
       localStorage.removeItem("playerId");
     }
-  });
+  }, [gameState]);
 
   useEffect(() => {
     socket = io("https://ws.infect.live");
@@ -103,7 +106,7 @@ const App = () => {
   }, [setGameState, gameState]);
 
   const playerId = localStorage.getItem("playerId");
-
+  console.log({ p: gameState.players, playerId });
   const playerInfo = gameState.players.find((p) => p.userId === playerId);
 
   const scanner = useMemo(() => {
@@ -191,6 +194,7 @@ const App = () => {
                   if (!localStorage.getItem("playerId")) {
                     let code = (Math.random() + 1).toString(36).substring(7);
                     socket?.emit("join", { userId: code });
+                    console.log({ code });
                     localStorage.setItem("playerId", code);
 
                     forceUpdate((p) => p + 1);
